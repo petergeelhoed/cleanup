@@ -1,20 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 void clean(char** p)
 {
     puts(__func__);
     free(*p);
 }
-char* make()
+
+void make()
 {
     puts(__func__);
     char* c __attribute__((cleanup(clean))) = malloc(sizeof(char) * 7);
-    puts(__func__);
-    return c;
+    strncpy(c, "hello", 6);
+    puts(c);
 }
+
 int main()
 {
     puts(__func__);
-    char* y = make();
+    make();
     puts(__func__);
 }
