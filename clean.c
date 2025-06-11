@@ -1,6 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define SAFE_PERSON(p)                                                                             \
+    struct PERSON* p __attribute__((cleanup(cleanPerson))) = malloc(sizeof(struct PERSON));        \
+    if (p)                                                                                         \
+    {                                                                                              \
+        p->name = (char*)malloc(sizeof(char) * 7);                                                 \
+        if (!p->name)                                                                              \
+        {                                                                                          \
+            puts("Out of memory");                                                                 \
+            exit(-2);                                                                              \
+        }                                                                                          \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+        {                                                                                          \
+            puts("Out of memory");                                                                 \
+            exit(-2);                                                                              \
+        }                                                                                          \
+    }
+
 struct PERSON
 {
     char* name;
@@ -9,16 +29,15 @@ struct PERSON
 
 void cleanPerson(struct PERSON** p)
 {
-    printf("%s %p\n", __func__, (*p)->name);
+    printf("%12s %p %p\n", __func__, *p, (*p)->name);
     free((*p)->name);
     free(*p);
 }
 
 void make()
 {
-    struct PERSON* p __attribute__((cleanup(cleanPerson))) = malloc(sizeof(struct PERSON));
-    p->name = (char*)malloc(sizeof(char) * 7);
-    printf("%s %p\n", __func__, p->name);
+    SAFE_PERSON(p);
+    printf("%12s %p %p\n", __func__, p, p->name);
     strncpy(p->name, "hello", 6);
     puts(p->name);
 }
