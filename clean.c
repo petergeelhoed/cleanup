@@ -10,6 +10,7 @@
         if (!p->name)                                                                              \
         {                                                                                          \
             puts("Out of memory");                                                                 \
+            free(p);                                                                               \
             exit(-2);                                                                              \
         }                                                                                          \
     }                                                                                              \
@@ -29,9 +30,12 @@ struct PERSON
 
 void cleanPerson(struct PERSON** p)
 {
-    printf("%12s %p %p\n", __func__, *p, (*p)->name);
-    free((*p)->name);
-    free(*p);
+    if (*p && (*p)->name)
+    {
+        printf("%12s %p %p\n", __func__, *p, (*p)->name);
+        free((*p)->name);
+        free(*p);
+    }
 }
 
 void make()
@@ -39,6 +43,7 @@ void make()
     SAFE_PERSON(p);
     printf("%12s %p %p\n", __func__, p, p->name);
     strncpy(p->name, "hello", 6);
+    p->name[6] = '\0';
     puts(p->name);
 }
 
