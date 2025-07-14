@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NAME_SIZE 6
 #define SAFE_PERSON(p)                                                                             \
     struct PERSON* p __attribute__((cleanup(cleanPerson))) = malloc(sizeof(struct PERSON));        \
     if (p)                                                                                         \
     {                                                                                              \
-        p->name = (char*)malloc(sizeof(char) * 7);                                                 \
+        p->name = (char*)malloc(sizeof(char) * NAME_SIZE);                                         \
         if (!p->name)                                                                              \
         {                                                                                          \
             puts("Out of memory");                                                                 \
@@ -42,8 +43,8 @@ void make()
 {
     SAFE_PERSON(p);
     printf("%12s %p %p\n", __func__, p, p->name);
-    strncpy(p->name, "hello", 6);
-    p->name[6] = '\0';
+    strncpy(p->name, "hello", NAME_SIZE);
+    p->name[NAME_SIZE - 1] = '\0';
     puts(p->name);
 }
 
