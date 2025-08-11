@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_FRAMES 64
 
@@ -67,6 +68,7 @@ static int bt_full_callback(void* data,
             {
                 char line[1024];
                 int current_line = 1;
+                int semicolon = 0;
                 while (fgets(line, sizeof(line), file))
                 {
                     if (current_line >= lineno - bt_context_lines)
@@ -83,7 +85,7 @@ static int bt_full_callback(void* data,
                             fprintf(stderr, "%4d: %s", current_line, line);
                         }
                     }
-                    if (current_line == lineno)
+                    if (current_line >= lineno && strchr(line, ';'))
                     {
                         break;
                     }
