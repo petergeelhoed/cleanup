@@ -13,7 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_FRAMES 64
+#define BT_MAX_FRAMES      64
+#define BT_RED_FORMAT      "%4d: \033[31m%s\033[0m"
+#define BT_NORMAL_FORMAT   "%4d: \033[1m%s\033[0m"
+#define BT_FUNCTION_FORMAT "%s:%d: \033[32m%s()\033[0m\n"
 
 static struct backtrace_state* state = NULL;
 
@@ -55,46 +58,36 @@ static int bt_full_callback(void* data,
 
     if (filename && function_name && lineno > 0)
     {
-        fprintf(stderr,
-                "%s:%d: \033[32m%s()\033[0m\n",
-                filename,
-                lineno,
-                function_name);
+        fprintf(stderr, BT_FUNCTION_FORMAT, filename, lineno, function_name);
 
-        if (filename && lineno > 0)
+        FILE* file = fopen(filename, "r");
+        if (file)
         {
-            FILE* file = fopen(filename, "r");
-            if (file)
+            char line[1024];
+            int first_line = lineno - bt_context_lines;
+            if (first_line < 1)
+                first_line = 1;
+            int current_line = 1;
+            while (fgets(line, sizeof(line), file))
             {
-                char line[1024];
-                int current_line = 1;
-                int semicolon = 0;
-                while (fgets(line, sizeof(line), file))
+                if (current_line >= first_line)
                 {
-                    if (current_line >= lineno - bt_context_lines)
-                    {
-                        if (current_line == lineno && bt_context_lines > 0)
-                        {
-                            fprintf(stderr,
-                                    "%4d: \033[31m%s\033[0m",
-                                    current_line,
-                                    line);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "%4d: %s", current_line, line);
-                        }
-                    }
-                    if (current_line >= lineno && strchr(line, ';'))
-                    {
-                        break;
-                    }
-
-                    current_line++;
+                    fprintf(stderr,
+                            (current_line == lineno && bt_context_lines > 0)
+                                ? BT_RED_FORMAT
+                                : BT_NORMAL_FORMAT,
+                            current_line,
+                            line);
                 }
-                bt_context_lines = 0;
-                fclose(file);
+                if (current_line >= lineno && strchr(line, ';'))
+                {
+                    break;
+                }
+
+                current_line++;
             }
+            bt_context_lines = 0;
+            fclose(file);
         }
     }
     return 0;
