@@ -16,7 +16,7 @@
 
 static struct backtrace_state* state = NULL;
 
-const char* bt_signal_name(int sig)
+static const char* bt_signal_name(int sig)
 {
     switch (sig)
     {
@@ -37,6 +37,7 @@ const char* bt_signal_name(int sig)
 
 static void bt_error_callback(void* data, const char* msg, int errnum)
 {
+    (void)data;
     fprintf(stderr, "libbacktrace error: %s (%d)\n", msg, errnum);
 }
 
@@ -48,7 +49,10 @@ static int bt_full_callback(void* data,
                             int lineno,
                             const char* function_name)
 {
-    if (filename || function_name || lineno != 0)
+    (void)data;
+    (void)pc;
+
+    if (filename && function_name && lineno > 0)
     {
         fprintf(stderr, "%s:%d: %s()\n", filename, lineno, function_name);
 
@@ -92,6 +96,8 @@ static int bt_full_callback(void* data,
 
 static void bt_fault_handler(int sig, siginfo_t* info, void* ucontext)
 {
+    (void)info;
+    (void)ucontext;
     fprintf(stderr, "Caught signal %d (%s)\n", sig, bt_signal_name(sig));
     fprintf(stderr, "Backtrace:\n");
 
@@ -100,7 +106,7 @@ static void bt_fault_handler(int sig, siginfo_t* info, void* ucontext)
     exit(EXIT_FAILURE);
 }
 
-void setup_crash_handler(const char* argv0)
+static void setup_crash_handler(const char* argv0)
 {
     state = backtrace_create_state(argv0, 1, bt_error_callback, NULL);
 
@@ -109,8 +115,8 @@ void setup_crash_handler(const char* argv0)
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
 
-    int signals[] = {SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS};
-    for (int i = 0; i < sizeof(signals) / sizeof(signals[0]); ++i)
+    static const int signals[] = {SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS};
+    for (size_t i = 0; i < sizeof(signals) / sizeof(signals[0]); ++i)
     {
         if (sigaction(signals[i], &sa, NULL) == -1)
         {
