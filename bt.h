@@ -1,3 +1,10 @@
+/* This adds the backtrace after a segfault
+   simply include this header and at the start of main add:
+       setup_segfault_handler(argv[0]);
+
+   compile with -g -lbacktrace -DDEBUG
+*/
+
 #pragma once
 #ifdef DEBUG
 #include <backtrace.h>
@@ -9,13 +16,35 @@
 
 static struct backtrace_state* state = NULL;
 
+const char* signal_name(int sig)
+{
+    switch (sig)
+    {
+    case SIGSEGV:
+        return "SIGSEGV";
+    case SIGABRT:
+        return "SIGABRT";
+    case SIGFPE:
+        return "SIGFPE";
+    case SIGILL:
+        return "SIGILL";
+    case SIGBUS:
+        return "SIGBUS";
+    default:
+        return "UNHANDLED SIGNAL";
+    }
+}
+
 static void error_callback(void* data, const char* msg, int errnum)
 {
     fprintf(stderr, "libbacktrace error: %s (%d)\n", msg, errnum);
 }
 
-static int
-full_callback(void* data, uintptr_t pc, const char* filename, int lineno, const char* function)
+static int full_callback(void* data,
+                         uintptr_t pc,
+                         const char* filename,
+                         int lineno,
+                         const char* function)
 {
     if (filename || function || lineno != 0)
     {
@@ -26,7 +55,7 @@ full_callback(void* data, uintptr_t pc, const char* filename, int lineno, const 
 
 static void segfault_handler(int sig, siginfo_t* info, void* ucontext)
 {
-    fprintf(stderr, "Caught signal %d (Segmentation Fault)\n", sig);
+    fprintf(stderr, "Caught signal %d (%s)\n", sig, signal_name(sig));
     fprintf(stderr, "Backtrace:\n");
 
     backtrace_full(state, 0, full_callback, error_callback, NULL);
@@ -42,11 +71,14 @@ void setup_segfault_handler(const char* argv0)
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
 
-    if (sigaction(SIGSEGV, &sa, NULL) == -1)
+    int signals[] = {SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS};
+    for (int i = 0; i < sizeof(signals) / sizeof(signals[0]); ++i)
     {
-        perror("sigaction");
-        exit(EXIT_FAILURE);
+        if (sigaction(signals[i], &sa, NULL) == -1)
+        {
+            fprintf(
+                stderr, "Failed to set handler for signal %d\n", signals[i]);
+        }
     }
 }
-
 #endif
