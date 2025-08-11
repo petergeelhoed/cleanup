@@ -54,7 +54,11 @@ static int bt_full_callback(void* data,
 
     if (filename && function_name && lineno > 0)
     {
-        fprintf(stderr, "%s:%d: %s()\n", filename, lineno, function_name);
+        fprintf(stderr,
+                "%s:%d: \033[32m%s()\033[0m\n",
+                filename,
+                lineno,
+                function_name);
 
         if (filename && lineno > 0)
         {
@@ -67,7 +71,7 @@ static int bt_full_callback(void* data,
                 {
                     if (current_line >= lineno - bt_context_lines)
                     {
-                        if (bt_context_lines > 0 && current_line == lineno)
+                        if (current_line == lineno && bt_context_lines > 0)
                         {
                             fprintf(stderr,
                                     "%4d: \033[31m%s\033[0m",
