@@ -1,6 +1,6 @@
-/* This adds the backtrace after a segfault
+/* This adds the backtrace after a crash
    simply include this header and at the start of main add:
-       setup_segfault_handler(argv[0]);
+       setup_crash_handler(argv[0]);
 
    compile with -g -lbacktrace -DDEBUG
 */
@@ -53,7 +53,7 @@ static int full_callback(void* data,
     return 0;
 }
 
-static void segfault_handler(int sig, siginfo_t* info, void* ucontext)
+static void fault_handler(int sig, siginfo_t* info, void* ucontext)
 {
     fprintf(stderr, "Caught signal %d (%s)\n", sig, signal_name(sig));
     fprintf(stderr, "Backtrace:\n");
@@ -62,12 +62,12 @@ static void segfault_handler(int sig, siginfo_t* info, void* ucontext)
     exit(EXIT_FAILURE);
 }
 
-void setup_segfault_handler(const char* argv0)
+void setup_crash_handler(const char* argv0)
 {
     state = backtrace_create_state(argv0, 1, error_callback, NULL);
 
     struct sigaction sa;
-    sa.sa_sigaction = segfault_handler;
+    sa.sa_sigaction = fault_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
 

@@ -10,7 +10,7 @@ void cause_segfault()
 int main(int argc, char** argv)
 {
 #ifdef DEBUG
-    setup_segfault_handler(argv[0]);
+    setup_crash_handler(argv[0]);
 #endif
 
     cause_segfault();
